@@ -57,6 +57,20 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Future<Null> _refresh() async {
+    await Future.delayed(Duration(seconds: 1));
+
+    setState(() {
+      _tasks.sort((itemA, itemB) {
+        if(itemA["ok"] && ! itemB["ok"]) return 1;
+        else if (!itemA["ok"] && itemB["ok"]) return -1;
+        else return 0;
+      });
+      _saveData();
+    });
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,12 +106,15 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.only(top: 10.0),
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  return buildItem(context, index);
-                },
+              child: RefreshIndicator(
+                onRefresh: _refresh,
+                child: ListView.builder(
+                  padding: EdgeInsets.only(top: 10.0),
+                  itemCount: _tasks.length,
+                  itemBuilder: (context, index) {
+                    return buildItem(context, index);
+                  },
+                ),
               ),
             ),
           ],
@@ -139,6 +156,7 @@ class _MyHomePageState extends State<MyHomePage> {
             duration: Duration(seconds: 2),
           );
 
+          Scaffold.of(context).removeCurrentSnackBar();
           Scaffold.of(context).showSnackBar(snack);
 
         });
