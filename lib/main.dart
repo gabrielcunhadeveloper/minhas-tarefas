@@ -30,6 +30,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List _tasks = [];
   TextEditingController _taskController = TextEditingController();
+  Map<String, dynamic> _lastRemoved;
+  int _lastRemovedPosition;
 
   @override
   void initState() {
@@ -94,27 +96,68 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: EdgeInsets.only(top: 10.0),
                 itemCount: _tasks.length,
                 itemBuilder: (context, index) {
-                  return CheckboxListTile(
-                    title: Text(_tasks[index]["title"]),
-                    value: _tasks[index]["ok"],
-                    secondary: CircleAvatar(
-                      child: Icon(
-                        _tasks[index]["ok"] ? Icons.check : Icons.error
-                      ),
-                    ),
-                    onChanged: (checked) {
-                      setState(() {
-                        _tasks[index]["ok"] = checked;
-                        _saveData();
-                      });
-                    },
-                  );
+                  return buildItem(context, index);
                 },
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget buildItem (BuildContext context, int index) {
+    return Dismissible(
+      key: Key(DateTime.now().millisecondsSinceEpoch.toString()),
+      background: Container(
+        color: Colors.red,
+        child: Align(
+          alignment: Alignment(-0.9, 0.0),
+          child: Icon(Icons.delete, color: Colors.white,),
+        ),
+      ),
+      direction: DismissDirection.startToEnd,
+      onDismissed: (direction) {
+        setState(() {
+          _lastRemoved = Map.from(_tasks[index]);
+          _lastRemovedPosition = index;
+          _tasks.removeAt(index);
+
+          _saveData();
+
+          final snack = SnackBar(
+            content: Text("Tarefa ${_lastRemoved["title"]} removida!"),
+            action: SnackBarAction(
+              label: "Desfazer",
+              onPressed: () {
+                setState(() {
+                  _tasks.insert(_lastRemovedPosition, _lastRemoved);
+                  _saveData();
+                });
+              },
+            ),
+            duration: Duration(seconds: 2),
+          );
+
+          Scaffold.of(context).showSnackBar(snack);
+
+        });
+      },
+      child: CheckboxListTile(
+        title: Text(_tasks[index]["title"]),
+        value: _tasks[index]["ok"],
+        secondary: CircleAvatar(
+          child: Icon(
+              _tasks[index]["ok"] ? Icons.check : Icons.error
+          ),
+        ),
+        onChanged: (checked) {
+          setState(() {
+            _tasks[index]["ok"] = checked;
+            _saveData();
+          });
+        },
+      )
     );
   }
 
